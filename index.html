@@ -2,1206 +2,1347 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Leitor de QR Code Pix - V2 Base + Compartilhar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Leitor de QR Code Pix - Soma</title>
 
-  <!-- Fallback para navegadores sem BarcodeDetector nativo -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <style>
-    :root {
-      --azul: #0b5ed7;
-      --verde: #198754;
-      --vermelho: #dc3545;
-      --cinza: #6c757d;
-      --fundo: #f4f6f8;
-      --borda: #d9dee3;
-      --texto: #1f2937;
-      --amarelo: #fff3cd;
+    :root{
+      --bg:#f4f6f9;
+      --card:#ffffff;
+      --card2:#f8fafc;
+      --text:#1f2937;
+      --muted:#667085;
+      --line:#d7dde7;
+      --green:#0b8f3a;
+      --green2:#e7f7ee;
+      --blue:#1769d8;
+      --red:#c1121f;
+      --orange:#c2410c;
+      --purple:#6d28d9;
+      --gray:#344054;
+      --dark:#101828;
     }
 
-    * { box-sizing: border-box; }
+    *{box-sizing:border-box}
 
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: var(--fundo);
-      color: var(--texto);
+    body{
+      margin:0;
+      font-family:Arial, Helvetica, sans-serif;
+      background:var(--bg);
+      color:var(--text);
     }
 
-    .container {
-      max-width: 820px;
-      margin: 0 auto;
-      padding: 14px;
+    .wrap{
+      max-width:760px;
+      margin:0 auto;
+      padding:16px 12px 40px;
     }
 
-    .card {
-      background: #ffffff;
-      border: 1px solid var(--borda);
-      border-radius: 14px;
-      padding: 14px;
-      box-shadow: 0 4px 16px rgba(0,0,0,.08);
-      margin-bottom: 14px;
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:18px;
+      margin-bottom:18px;
+      box-shadow:0 10px 30px rgba(16,24,40,.08);
     }
 
-    h1 {
-      font-size: 21px;
-      margin: 0 0 8px 0;
-      text-align: center;
+    h1{
+      font-size:28px;
+      line-height:1.15;
+      margin:0 0 8px;
+      text-align:center;
     }
 
-    .subtitulo {
-      text-align: center;
-      font-size: 14px;
-      color: #606b78;
-      margin-bottom: 12px;
-      line-height: 1.4;
+    h2{
+      font-size:22px;
+      margin:22px 0 14px;
     }
 
-    .camera-box {
-      position: relative;
-      width: 100%;
-      min-height: 320px;
-      background: #111827;
-      border-radius: 14px;
-      overflow: hidden;
-      border: 2px solid #111827;
+    p{
+      color:var(--muted);
+      margin:8px 0;
+      line-height:1.35;
+      text-align:center;
+      font-size:17px;
     }
 
-    video {
-      width: 100%;
-      height: 320px;
-      object-fit: cover;
-      display: block;
-      background: #111827;
+    .notice{
+      background:#fff7ed;
+      border:1px solid #fed7aa;
+      color:#7c2d12;
+      padding:12px 14px;
+      border-radius:14px;
+      margin:14px 0;
+      font-weight:700;
+      line-height:1.35;
+      text-align:left;
     }
 
-    .mira {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: min(72vw, 280px);
-      height: min(72vw, 280px);
-      transform: translate(-50%, -50%);
-      border: 3px solid #ffffff;
-      border-radius: 18px;
-      box-shadow: 0 0 0 9999px rgba(0,0,0,.22);
-      pointer-events: none;
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+      margin-top:14px;
     }
 
-    .mira::after {
-      content: "Aproxime o QR Code aqui";
-      position: absolute;
-      left: 50%;
-      bottom: -34px;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,.68);
-      color: #fff;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      white-space: nowrap;
+    button, .btnFile{
+      width:100%;
+      border:0;
+      border-radius:16px;
+      padding:17px 14px;
+      font-size:19px;
+      font-weight:800;
+      color:white;
+      cursor:pointer;
+      text-align:center;
+      display:block;
+      text-decoration:none;
+      user-select:none;
+      -webkit-tap-highlight-color:transparent;
     }
 
-    .botoes {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 9px;
-      margin-top: 10px;
+    button:active, .btnFile:active{transform:scale(.99)}
+
+    .primary{background:var(--green)}
+    .secondary{background:var(--gray)}
+    .danger{background:var(--red)}
+    .orange{background:var(--orange)}
+    .blue{background:var(--blue)}
+    .purple{background:var(--purple)}
+    .lightBtn{
+      background:#eef2f7;
+      color:#1f2937;
+      border:1px solid #d7dde7;
     }
 
-    button, .botao-arquivo {
-      border: 0;
-      border-radius: 10px;
-      padding: 13px 12px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      color: #ffffff;
-      text-align: center;
+    input[type="file"]{display:none}
+
+    .cameraBox{
+      display:none;
+      margin-top:16px;
+      padding:14px;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:#f8fafc;
     }
 
-    button:disabled {
-      opacity: .55;
-      cursor: not-allowed;
+    .cameraBox.active{display:block}
+
+    .videoFrame{
+      width:100%;
+      border-radius:18px;
+      background:#111827;
+      overflow:hidden;
+      border:1px solid #111827;
+      position:relative;
     }
 
-    .btn-azul { background: var(--azul); }
-    .btn-verde { background: var(--verde); }
-    .btn-vermelho { background: var(--vermelho); }
-    .btn-cinza { background: var(--cinza); }
-    .btn-roxo { background: #6f42c1; }
-    .btn-escuro { background: #334155; }
-
-    .status {
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 10px;
-      background: #eef4ff;
-      color: #174ea6;
-      font-size: 14px;
-      line-height: 1.45;
-      word-break: break-word;
-      white-space: pre-wrap;
+    video{
+      width:100%;
+      display:block;
+      max-height:430px;
+      object-fit:cover;
+      background:#111827;
     }
 
-    .alerta {
-      background: var(--amarelo);
-      color: #664d03;
-      border: 1px solid #ffec99;
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 13px;
-      line-height: 1.45;
-      margin-top: 10px;
+    .cameraHint{
+      color:#fff;
+      background:rgba(0,0,0,.55);
+      position:absolute;
+      left:50%;
+      bottom:10px;
+      transform:translateX(-50%);
+      padding:6px 12px;
+      border-radius:999px;
+      font-size:13px;
+      white-space:nowrap;
     }
 
-    select, input {
-      width: 100%;
-      border: 1px solid var(--borda);
-      border-radius: 10px;
-      padding: 12px;
-      font-size: 15px;
-      background: #fff;
+    select{
+      width:100%;
+      margin-top:12px;
+      background:#ffffff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      color:var(--text);
+      font-size:17px;
+      padding:15px;
+      outline:none;
     }
 
-    .linha-form {
-      display: grid;
-      grid-template-columns: 1fr 150px;
-      gap: 8px;
-      margin-top: 10px;
+    .manual{
+      margin-top:14px;
+      background:#f8fafc;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
     }
 
-    .linha-camera {
-      margin-top: 10px;
+    .manual p{
+      text-align:left;
+      font-weight:800;
+      color:#344054;
     }
 
-    .total {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      font-size: 20px;
-      font-weight: 800;
-      padding: 14px;
-      border-radius: 12px;
-      background: #eaf7ee;
-      color: #0f5132;
-      margin-bottom: 12px;
+    .manual input{
+      width:100%;
+      background:#ffffff;
+      border:1px solid #cfd6e3;
+      border-radius:16px;
+      color:#111827;
+      font-size:22px;
+      padding:17px;
+      outline:none;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
+    .manual input::placeholder{color:#98a2b3}
+
+    .status{
+      margin-top:14px;
+      padding:13px 14px;
+      background:#f8fafc;
+      border:1px solid var(--line);
+      border-radius:14px;
+      color:#344054;
+      line-height:1.35;
+      min-height:48px;
+      font-weight:700;
     }
 
-    th, td {
-      padding: 10px 8px;
-      border-bottom: 1px solid var(--borda);
-      vertical-align: top;
-      text-align: left;
+    .ok{color:#087443;font-weight:900}
+    .bad{color:#b42318;font-weight:900}
+
+    .totalBox{
+      margin-top:10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      background:linear-gradient(135deg,#e7f7ee,#d7f5e2);
+      border:1px solid #9fe2b8;
+      border-radius:22px;
+      padding:20px;
     }
 
-    th {
-      background: #f8fafc;
-      font-size: 13px;
+    .totalBox .label{
+      font-size:21px;
+      font-weight:900;
+      line-height:1.1;
+      color:#075e2c;
     }
 
-    .valor {
-      font-weight: 800;
-      white-space: nowrap;
+    .totalBox .value{
+      font-size:34px;
+      font-weight:900;
+      color:#064e28;
+      white-space:nowrap;
     }
 
-    .pequeno {
-      font-size: 12px;
-      color: #64748b;
-      margin-top: 3px;
-      word-break: break-word;
+    .actions{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+      margin-top:16px;
     }
 
-    .sem-itens {
-      text-align: center;
-      color: #64748b;
-      padding: 18px;
-      border: 1px dashed var(--borda);
-      border-radius: 10px;
-      background: #fafafa;
+    .tableWrap{
+      width:100%;
+      overflow-x:auto;
+      margin-top:10px;
     }
 
-    .remover {
-      background: var(--vermelho);
-      padding: 7px 9px;
-      border-radius: 8px;
-      font-size: 12px;
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:640px;
     }
 
-    .arquivo-real {
-      display: none;
+    th,td{
+      border-bottom:1px solid #d7dde7;
+      padding:12px 8px;
+      text-align:left;
+      vertical-align:top;
     }
 
-    details {
-      margin-top: 10px;
-      border: 1px solid var(--borda);
-      border-radius: 10px;
-      padding: 10px;
-      background: #fafafa;
-      font-size: 13px;
+    th{
+      color:#344054;
+      font-size:15px;
+      background:#f8fafc;
     }
 
-    summary {
-      cursor: pointer;
-      font-weight: 700;
+    td{
+      color:#1f2937;
+      font-size:15px;
     }
 
-    pre {
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-size: 12px;
-      background: #fff;
-      border: 1px solid var(--borda);
-      border-radius: 8px;
-      padding: 8px;
-      max-height: 170px;
-      overflow: auto;
+    .idx{width:38px;color:#667085}
+    .amount{font-weight:900;font-size:17px;white-space:nowrap}
+    .name{font-weight:900}
+    .meta{
+      color:#667085;
+      margin-top:6px;
+      line-height:1.35;
+      word-break:break-word;
     }
 
-    @media (max-width: 560px) {
-      .botoes, .linha-form {
-        grid-template-columns: 1fr;
-      }
+    .remove{
+      background:var(--red);
+      border-radius:12px;
+      padding:11px 13px;
+      font-size:15px;
+      width:auto;
+      min-width:96px;
+    }
 
-      h1 { font-size: 19px; }
-      video { height: 300px; }
-      .camera-box { min-height: 300px; }
-      table { font-size: 12px; }
-      th, td { padding: 8px 5px; }
+    .small{
+      font-size:13px;
+      color:#667085;
+    }
+
+    .hiddenCanvas{display:none}
+
+    @media (max-width:520px){
+      .wrap{padding:12px 8px 34px}
+      .card{border-radius:18px;padding:16px}
+      h1{font-size:25px}
+      h2{font-size:21px}
+      p{font-size:16px}
+      button,.btnFile{font-size:18px;padding:17px 12px}
+      .totalBox{padding:18px 16px}
+      .totalBox .label{font-size:19px}
+      .totalBox .value{font-size:30px}
+      .manual input{font-size:20px}
+      table{min-width:560px}
+      th,td{font-size:14px;padding:10px 6px}
+      .amount{font-size:16px}
     }
   </style>
 </head>
+
 <body>
-  <div class="container">
-    <div class="card">
+  <div class="wrap">
+    <section class="card">
       <h1>Leitor de QR Code Pix</h1>
-      <div class="subtitulo">
-        Base V2 preservada: mesma leitura/extração por imagem que funcionou. Acrescentado apenas compartilhar, WhatsApp, Telegram, TXT, PNG e PDF.
+      <p>Leitura por foto/imagem como principal. Compartilhamento com resumo detalhado para WhatsApp e Telegram.</p>
+
+      <div class="grid">
+        <label class="btnFile primary" for="fileCamera">📷 Tirar foto do QR Code</label>
+        <input id="fileCamera" type="file" accept="image/*" capture="environment" multiple />
+
+        <label class="btnFile secondary" for="fileGallery">🖼️ Escolher imagem da galeria</label>
+        <input id="fileGallery" type="file" accept="image/*" multiple />
+
+        <button class="lightBtn" id="btnShowCamera" type="button">🎥 Usar câmera ao vivo</button>
       </div>
 
-      <div class="camera-box">
-        <video id="video" playsinline muted></video>
-        <div class="mira"></div>
-      </div>
+      <div id="cameraBox" class="cameraBox">
+        <div class="videoFrame">
+          <video id="video" playsinline muted></video>
+          <div class="cameraHint">Aproxime o QR Code aqui</div>
+        </div>
 
-      <div class="linha-camera">
-        <select id="cameraSelect" onchange="trocarCamera()">
+        <select id="cameraSelect">
           <option value="">Câmera traseira automática</option>
         </select>
+
+        <div class="grid">
+          <button class="blue" id="btnStartCamera" type="button">📷 Iniciar câmera</button>
+          <button class="secondary" id="btnStopCamera" type="button">⏹️ Parar câmera</button>
+        </div>
       </div>
 
-      <div class="botoes">
-        <button id="btnIniciar" class="btn-azul" onclick="iniciarCamera()">📷 Iniciar câmera</button>
-        <button id="btnParar" class="btn-cinza" onclick="pararCamera()" disabled>⏹️ Parar câmera</button>
+      <div class="manual">
+        <p>Adicionar valor manual</p>
+        <input id="manualValor" inputmode="decimal" placeholder="Valor. Ex.: 164,28" />
+        <div class="grid">
+          <button class="orange" id="btnManual" type="button">➕ Adicionar valor manual</button>
+        </div>
       </div>
 
-      <div class="botoes">
-        <label class="botao-arquivo btn-verde" for="arquivoQR">🖼️ Ler imagem/foto</label>
-        <button class="btn-cinza" onclick="testarSuporte()">🧪 Testar suporte</button>
-      </div>
-      <input id="arquivoQR" class="arquivo-real" type="file" accept="image/*" capture="environment" onchange="lerArquivoImagem(event)" />
+      <div id="status" class="status">Pronto. Tire a foto do QR Code ou escolha uma imagem.</div>
+    </section>
 
-      <div class="linha-form">
-        <input id="valorManual" type="text" inputmode="decimal" placeholder="Valor manual, ex.: 164,28" />
-        <button class="btn-verde" onclick="adicionarManual()">➕ Adicionar</button>
-      </div>
+    <section class="card">
+      <h2>Resumo</h2>
 
-      <div id="status" class="status">Aguardando início da câmera.</div>
-
-      <div class="alerta">
-        Para funcionar pela câmera, abra por HTTPS no Chrome/Android ou Safari/iPhone. Se abrir como arquivo local ou dentro de algum app que bloqueia câmera, use o botão “Ler imagem/foto”.
+      <div class="totalBox">
+        <div class="label">Total<br>capturado</div>
+        <div class="value" id="total">R$ 0,00</div>
       </div>
 
-      <details>
-        <summary>Último QR lido / diagnóstico</summary>
-        <pre id="debug">Nenhuma leitura ainda.</pre>
-      </details>
-    </div>
-
-    <div class="card">
-      <div class="total">
-        <span>Total capturado</span>
-        <span id="total">R$ 0,00</span>
+      <div class="actions">
+        <button class="primary" id="btnShare" type="button">📲 Compartilhar resumo</button>
+        <button class="secondary" id="btnCopy" type="button">📋 Copiar texto</button>
+        <button class="primary" id="btnWhatsapp" type="button">🟢 WhatsApp</button>
+        <button class="blue" id="btnTelegram" type="button">✈️ Telegram</button>
       </div>
 
-      <div class="botoes" style="margin-bottom: 12px;">
-        <button class="btn-verde" onclick="compartilharResumo()">📲 Compartilhar resumo</button>
-        <button class="btn-escuro" onclick="copiarResumo()">📋 Copiar texto</button>
+      <h2>Baixar</h2>
+      <div class="actions">
+        <button class="purple" id="btnPng" type="button">🖼️ Baixar imagem PNG</button>
+        <button class="blue" id="btnPdf" type="button">📄 Baixar PDF</button>
+        <button class="secondary" id="btnTxt" type="button">📄 Baixar TXT</button>
+        <button class="secondary" id="btnCsv" type="button">📤 Exportar CSV</button>
+        <button class="danger" id="btnClear" type="button">🗑️ Limpar tudo</button>
       </div>
-
-      <div class="botoes" style="margin-bottom: 12px;">
-        <button class="btn-verde" onclick="abrirWhatsApp()">🟢 WhatsApp</button>
-        <button class="btn-azul" onclick="abrirTelegram()">✈️ Telegram</button>
-      </div>
-
-      <div class="botoes" style="margin-bottom: 12px;">
-        <button class="btn-roxo" onclick="baixarImagemPNG()">🖼️ Baixar imagem PNG</button>
-        <button class="btn-azul" onclick="baixarPDF()">📄 Baixar PDF</button>
-      </div>
-
-      <div class="botoes" style="margin-bottom: 12px;">
-        <button class="btn-cinza" onclick="baixarTXT()">📄 Baixar TXT</button>
-        <button class="btn-cinza" onclick="exportarCSV()">📤 Exportar CSV</button>
-      </div>
-
-      <div class="botoes" style="margin-bottom: 12px;">
-        <button class="btn-vermelho" onclick="limparTudo()">🗑️ Limpar tudo</button>
-      </div>
-
-      <div id="lista"></div>
-    </div>
-  </div>
-
-  <canvas id="canvas" style="display:none"></canvas>
-
-  <script>
-    let streamAtual = null;
-    let detector = null;
-    let escaneando = false;
-    let loopAtivo = false;
-    let leituraPausada = false;
-    let ultimoErroLeitura = '';
-    let itens = [];
-    let qrsLidos = new Set();
-
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const cameraSelect = document.getElementById('cameraSelect');
-
-    const moedaBR = new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    });
-
-    function setStatus(msg) {
-      document.getElementById('status').innerText = msg;
-    }
-
-    function setDebug(msg) {
-      document.getElementById('debug').innerText = msg || '';
-    }
-
-    async function prepararDetector() {
-      detector = null;
-
-      if ('BarcodeDetector' in window) {
-        try {
-          if (BarcodeDetector.getSupportedFormats) {
-            const formatos = await BarcodeDetector.getSupportedFormats();
-            if (formatos.includes('qr_code')) {
-              detector = new BarcodeDetector({ formats: ['qr_code'] });
-            }
-          } else {
-            detector = new BarcodeDetector({ formats: ['qr_code'] });
-          }
-        } catch (erro) {
-          detector = null;
-        }
-      }
-    }
-
-    async function testarSuporte() {
-      await prepararDetector();
-      const linhas = [];
-      linhas.push('HTTPS/seguro: ' + (window.isSecureContext ? 'SIM' : 'NÃO'));
-      linhas.push('navigator.mediaDevices: ' + (navigator.mediaDevices ? 'SIM' : 'NÃO'));
-      linhas.push('getUserMedia: ' + (navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? 'SIM' : 'NÃO'));
-      linhas.push('BarcodeDetector nativo: ' + (detector ? 'SIM' : 'NÃO'));
-      linhas.push('Fallback jsQR carregado: ' + (window.jsQR ? 'SIM' : 'NÃO'));
-      linhas.push('Página: ' + location.href);
-      setDebug(linhas.join('\n'));
-      setStatus(linhas.join('\n'));
-    }
-
-    async function iniciarCamera() {
-      if (escaneando) return;
-
-      try {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          setStatus('Este navegador não liberou acesso à câmera. Abra por HTTPS no Chrome/Safari ou use “Ler imagem/foto”.');
-          return;
-        }
-
-        await prepararDetector();
-
-        const deviceId = cameraSelect.value;
-        const constraints = {
-          audio: false,
-          video: deviceId
-            ? { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
-            : { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
-        };
-
-        streamAtual = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = streamAtual;
-        await video.play();
-
-        escaneando = true;
-        leituraPausada = false;
-        document.getElementById('btnIniciar').disabled = true;
-        document.getElementById('btnParar').disabled = false;
-
-        await listarCameras();
-
-        setStatus('Câmera ativa. Aproxime o QR Code dentro do quadrado. Se não ler, toque na tela para focar ou use “Ler imagem/foto”.');
-        if (!detector && !window.jsQR) {
-          setStatus('Câmera abriu, mas não há leitor de QR disponível neste navegador. Use Chrome atualizado ou o botão “Ler imagem/foto”.');
-        }
-
-        if (!loopAtivo) {
-          loopAtivo = true;
-          requestAnimationFrame(loopLeitura);
-        }
-      } catch (erro) {
-        setStatus('Erro ao abrir câmera: ' + formatarErroCamera(erro));
-        setDebug(String(erro && (erro.stack || erro.message || erro)));
-        await pararCamera(false);
-      }
-    }
-
-    function formatarErroCamera(erro) {
-      const nome = erro && erro.name ? erro.name : '';
-      if (nome === 'NotAllowedError' || nome === 'PermissionDeniedError') return 'permissão negada. Libere a câmera no navegador.';
-      if (nome === 'NotFoundError' || nome === 'DevicesNotFoundError') return 'nenhuma câmera encontrada.';
-      if (nome === 'NotReadableError') return 'a câmera está em uso por outro aplicativo.';
-      if (nome === 'OverconstrainedError') return 'não foi possível usar a câmera selecionada.';
-      if (!window.isSecureContext) return 'a página não está em HTTPS. Publique em HTTPS.';
-      return String(erro && (erro.message || erro));
-    }
-
-    async function pararCamera(atualizarStatus = true) {
-      escaneando = false;
-      leituraPausada = false;
-
-      if (streamAtual) {
-        streamAtual.getTracks().forEach(track => track.stop());
-        streamAtual = null;
-      }
-
-      video.srcObject = null;
-      document.getElementById('btnIniciar').disabled = false;
-      document.getElementById('btnParar').disabled = true;
-
-      if (atualizarStatus) setStatus('Câmera parada.');
-    }
-
-    async function trocarCamera() {
-      if (!escaneando) return;
-      await pararCamera(false);
-      await iniciarCamera();
-    }
-
-    async function listarCameras() {
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const cameras = devices.filter(d => d.kind === 'videoinput');
-        const valorAtual = cameraSelect.value;
-        cameraSelect.innerHTML = '<option value="">Câmera traseira automática</option>';
-        cameras.forEach((cam, idx) => {
-          const opt = document.createElement('option');
-          opt.value = cam.deviceId;
-          opt.textContent = cam.label || ('Câmera ' + (idx + 1));
-          cameraSelect.appendChild(opt);
-        });
-        if (valorAtual) cameraSelect.value = valorAtual;
-      } catch (erro) {
-        console.warn(erro);
-      }
-    }
-
-    async function loopLeitura() {
-      if (!escaneando) {
-        loopAtivo = false;
-        return;
-      }
-
-      if (!leituraPausada && video.readyState >= 2) {
-        try {
-          let texto = '';
-
-          if (detector) {
-            const codigos = await detector.detect(video);
-            if (codigos && codigos.length) {
-              texto = codigos[0].rawValue || codigos[0].rawValueText || '';
-            }
-          }
-
-          if (!texto && window.jsQR) {
-            texto = lerVideoComJsQR();
-          }
-
-          if (texto) {
-            processarQRCode(texto, 'camera');
-          }
-        } catch (erro) {
-          ultimoErroLeitura = String(erro && (erro.message || erro));
-        }
-      }
-
-      requestAnimationFrame(loopLeitura);
-    }
-
-    function lerVideoComJsQR() {
-      const larguraVideo = video.videoWidth || 1280;
-      const alturaVideo = video.videoHeight || 720;
-
-      if (!larguraVideo || !alturaVideo) return '';
-
-      const maxLado = 900;
-      const escala = Math.min(1, maxLado / Math.max(larguraVideo, alturaVideo));
-      const w = Math.max(1, Math.floor(larguraVideo * escala));
-      const h = Math.max(1, Math.floor(alturaVideo * escala));
-
-      canvas.width = w;
-      canvas.height = h;
-      ctx.drawImage(video, 0, 0, w, h);
-
-      const imagem = ctx.getImageData(0, 0, w, h);
-      const resultado = jsQR(imagem.data, w, h, { inversionAttempts: 'attemptBoth' });
-      return resultado && resultado.data ? resultado.data : '';
-    }
-
-    async function lerArquivoImagem(event) {
-      const file = event.target.files && event.target.files[0];
-      event.target.value = '';
-      if (!file) return;
-
-      await prepararDetector();
-      setStatus('Processando imagem...');
-
-      try {
-        let texto = '';
-        const bitmap = await createImageBitmap(file);
-
-        if (detector) {
-          try {
-            const codigos = await detector.detect(bitmap);
-            if (codigos && codigos.length) texto = codigos[0].rawValue || '';
-          } catch (erroDetector) {
-            console.warn(erroDetector);
-          }
-        }
-
-        if (!texto && window.jsQR) {
-          const maxLado = 1600;
-          const escala = Math.min(1, maxLado / Math.max(bitmap.width, bitmap.height));
-          const w = Math.max(1, Math.floor(bitmap.width * escala));
-          const h = Math.max(1, Math.floor(bitmap.height * escala));
-          canvas.width = w;
-          canvas.height = h;
-          ctx.drawImage(bitmap, 0, 0, w, h);
-          const imagem = ctx.getImageData(0, 0, w, h);
-          const resultado = jsQR(imagem.data, w, h, { inversionAttempts: 'attemptBoth' });
-          if (resultado && resultado.data) texto = resultado.data;
-        }
-
-        if (texto) {
-          processarQRCode(texto, 'imagem');
-        } else {
-          setStatus('Não consegui ler QR Code nessa imagem. Tire a foto mais reta, mais próxima e sem reflexo.');
-        }
-      } catch (erro) {
-        setStatus('Erro ao processar imagem: ' + String(erro && (erro.message || erro)));
-        setDebug(String(erro && (erro.stack || erro.message || erro)));
-      }
-    }
-
-    function normalizarValor(valorTexto) {
-      if (valorTexto === null || valorTexto === undefined) return null;
-
-      let txt = String(valorTexto).trim();
-      txt = txt.replace(/R\$/gi, '').replace(/\s/g, '');
-
-      if (!txt) return null;
-
-      if (txt.includes(',') && txt.includes('.')) {
-        txt = txt.replace(/\./g, '').replace(',', '.');
-      } else {
-        txt = txt.replace(',', '.');
-      }
-
-      const valor = Number(txt);
-      if (!Number.isFinite(valor) || valor < 0) return null;
-      return Math.round(valor * 100) / 100;
-    }
-
-    function parseTLV(texto) {
-      const campos = [];
-      let i = 0;
-      const s = String(texto || '');
-
-      while (i + 4 <= s.length) {
-        const tag = s.substring(i, i + 2);
-        const lenTxt = s.substring(i + 2, i + 4);
-        const len = parseInt(lenTxt, 10);
-
-        if (!/^\d{2}$/.test(tag) || !/^\d{2}$/.test(lenTxt) || !Number.isFinite(len)) break;
-
-        const inicioValor = i + 4;
-        const fimValor = inicioValor + len;
-        if (fimValor > s.length) break;
-
-        campos.push({ tag, len, value: s.substring(inicioValor, fimValor) });
-        i = fimValor;
-      }
-
-      return campos;
-    }
-
-    function obterCampo(campos, tag) {
-      const item = campos.find(c => c.tag === tag);
-      return item ? item.value : '';
-    }
-
-    function extrairDadosPix(conteudoQR) {
-      const conteudo = String(conteudoQR || '').trim();
-      const campos = parseTLV(conteudo);
-
-      const valor = normalizarValor(obterCampo(campos, '54'));
-      const beneficiario = obterCampo(campos, '59') || 'Não identificado';
-      const cidade = obterCampo(campos, '60') || '';
-
-      let txid = '';
-      const adicional = obterCampo(campos, '62');
-      if (adicional) {
-        const camposAdicionais = parseTLV(adicional);
-        txid = obterCampo(camposAdicionais, '05');
-      }
-
-      let chavePix = '';
-      let urlPix = '';
-      for (const campo of campos) {
-        const tagNumerica = Number(campo.tag);
-        if (tagNumerica >= 26 && tagNumerica <= 51 && campo.value.toLowerCase().includes('br.gov.bcb.pix')) {
-          const contaPix = parseTLV(campo.value);
-          chavePix = obterCampo(contaPix, '01');
-          urlPix = obterCampo(contaPix, '25');
-          break;
-        }
-      }
-
-      return {
-        valor,
-        beneficiario,
-        cidade,
-        txid,
-        chavePix,
-        urlPix,
-        conteudo,
-        parecePix: conteudo.toLowerCase().includes('br.gov.bcb.pix')
-      };
-    }
-
-    function processarQRCode(decodedText, origem) {
-      if (leituraPausada) return;
-      leituraPausada = true;
-
-      const conteudo = String(decodedText || '').trim();
-      if (!conteudo) {
-        leituraPausada = false;
-        return;
-      }
-
-      setDebug('Origem: ' + origem + '\nTamanho: ' + conteudo.length + '\nConteúdo:\n' + conteudo);
-
-      if (qrsLidos.has(conteudo)) {
-        setStatus('QR Code já foi lido. Não somei novamente.');
-        setTimeout(() => leituraPausada = false, 1300);
-        return;
-      }
-
-      const dados = extrairDadosPix(conteudo);
-
-      if (!dados.parecePix) {
-        setStatus('QR Code lido, mas ele não parece ser Pix. Conteúdo exibido no diagnóstico.');
-        setTimeout(() => leituraPausada = false, 1600);
-        return;
-      }
-
-      let valor = dados.valor;
-      if (valor === null) {
-        const digitado = prompt('QR Code Pix lido, mas não encontrei valor fixo. Informe o valor manualmente, ex.: 164,28');
-        valor = normalizarValor(digitado);
-
-        if (valor === null) {
-          setStatus('QR Code lido, mas sem valor válido. Nada foi adicionado.');
-          setTimeout(() => leituraPausada = false, 1300);
-          return;
-        }
-      }
-
-      qrsLidos.add(conteudo);
-      itens.push({
-        id: gerarId(),
-        valor,
-        beneficiario: dados.beneficiario,
-        cidade: dados.cidade,
-        txid: dados.txid,
-        chavePix: dados.chavePix,
-        urlPix: dados.urlPix,
-        conteudo,
-        origem,
-        dataLeitura: new Date().toLocaleString('pt-BR')
-      });
-
-      vibrar();
-      salvarLocal();
-      renderizar();
-      setStatus('QR Code adicionado: ' + moedaBR.format(valor) + ' — ' + (dados.beneficiario || 'beneficiário não identificado'));
-
-      setTimeout(() => leituraPausada = false, 1800);
-    }
-
-    function gerarId() {
-      return Date.now() + '-' + Math.random().toString(16).slice(2);
-    }
-
-    function vibrar() {
-      try {
-        if (navigator.vibrate) navigator.vibrate(120);
-      } catch (erro) {
-        console.warn(erro);
-      }
-    }
-
-    function adicionarManual() {
-      const input = document.getElementById('valorManual');
-      const valor = normalizarValor(input.value);
-
-      if (valor === null) {
-        alert('Informe um valor válido, por exemplo: 164,28');
-        return;
-      }
-
-      itens.push({
-        id: gerarId(),
-        valor,
-        beneficiario: 'Valor manual',
-        cidade: '',
-        txid: '',
-        chavePix: '',
-        urlPix: '',
-        conteudo: 'MANUAL-' + gerarId(),
-        origem: 'manual',
-        dataLeitura: new Date().toLocaleString('pt-BR')
-      });
-
-      input.value = '';
-      salvarLocal();
-      renderizar();
-      setStatus('Valor manual adicionado: ' + moedaBR.format(valor));
-    }
-
-    function removerItem(id) {
-      const item = itens.find(i => i.id === id);
-      if (item && item.conteudo && !String(item.conteudo).startsWith('MANUAL-')) {
-        qrsLidos.delete(item.conteudo);
-      }
-
-      itens = itens.filter(i => i.id !== id);
-      salvarLocal();
-      renderizar();
-    }
-
-    function limparTudo() {
-      if (!confirm('Deseja limpar todos os valores capturados?')) return;
-      itens = [];
-      qrsLidos = new Set();
-      salvarLocal();
-      renderizar();
-      setStatus('Lista limpa.');
-      setDebug('Nenhuma leitura ainda.');
-    }
-
-    function salvarLocal() {
-      localStorage.setItem('PSS_PIX_QRCODE_ITENS_V2_BASE_COMPARTILHAR', JSON.stringify(itens));
-      localStorage.setItem('PSS_PIX_QRCODE_LIDOS_V2_BASE_COMPARTILHAR', JSON.stringify(Array.from(qrsLidos)));
-    }
-
-    function carregarLocal() {
-      try {
-        itens = JSON.parse(localStorage.getItem('PSS_PIX_QRCODE_ITENS_V2_BASE_COMPARTILHAR') || '[]');
-        qrsLidos = new Set(JSON.parse(localStorage.getItem('PSS_PIX_QRCODE_LIDOS_V2_BASE_COMPARTILHAR') || '[]'));
-      } catch (erro) {
-        itens = [];
-        qrsLidos = new Set();
-      }
-      renderizar();
-    }
-
-    function renderizar() {
-      const total = itens.reduce((soma, item) => soma + Number(item.valor || 0), 0);
-      document.getElementById('total').innerText = moedaBR.format(total);
-
-      const lista = document.getElementById('lista');
-      if (!itens.length) {
-        lista.innerHTML = '<div class="sem-itens">Nenhum QR Code capturado ainda.</div>';
-        return;
-      }
-
-      let html = `
+    </section>
+
+    <section class="card">
+      <h2>Itens capturados</h2>
+      <div class="tableWrap">
         <table>
           <thead>
             <tr>
-              <th>#</th>
+              <th class="idx">#</th>
               <th>Dados</th>
               <th>Valor</th>
               <th>Ação</th>
             </tr>
           </thead>
-          <tbody>
-      `;
+          <tbody id="tbody">
+            <tr>
+              <td colspan="4" class="small">Nenhum QR Code capturado ainda.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
 
-      itens.forEach((item, index) => {
-        html += `
-          <tr>
-            <td>${index + 1}</td>
-            <td>
-              <strong>${escaparHTML(item.beneficiario || 'Não identificado')}</strong>
-              <div class="pequeno">Leitura: ${escaparHTML(item.dataLeitura || '')}</div>
-              <div class="pequeno">Origem: ${escaparHTML(item.origem || '')}</div>
-              ${item.cidade ? `<div class="pequeno">Cidade: ${escaparHTML(item.cidade)}</div>` : ''}
-              ${item.txid ? `<div class="pequeno">TXID: ${escaparHTML(item.txid)}</div>` : ''}
-              ${item.chavePix ? `<div class="pequeno">Chave: ${escaparHTML(item.chavePix)}</div>` : ''}
-              ${item.urlPix ? `<div class="pequeno">URL Pix: ${escaparHTML(item.urlPix)}</div>` : ''}
-            </td>
-            <td class="valor">${moedaBR.format(item.valor || 0)}</td>
-            <td><button class="remover" onclick="removerItem('${item.id}')">Remover</button></td>
-          </tr>
-        `;
-      });
+  <canvas id="workCanvas" class="hiddenCanvas"></canvas>
 
-      html += '</tbody></table>';
-      lista.innerHTML = html;
-    }
+<script>
+(function(){
+  "use strict";
 
-    function escaparHTML(texto) {
-      return String(texto || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
+  const APP_KEY = "PSS_PIX_QR_SOMA_V2_BASE_CAMERA_OCULTA_20260611";
 
-    function totalAtual() {
-      return itens.reduce((soma, item) => soma + Number(item.valor || 0), 0);
-    }
+  const el = {
+    fileCamera: document.getElementById("fileCamera"),
+    fileGallery: document.getElementById("fileGallery"),
+    btnShowCamera: document.getElementById("btnShowCamera"),
+    cameraBox: document.getElementById("cameraBox"),
+    video: document.getElementById("video"),
+    cameraSelect: document.getElementById("cameraSelect"),
+    btnStartCamera: document.getElementById("btnStartCamera"),
+    btnStopCamera: document.getElementById("btnStopCamera"),
+    manualValor: document.getElementById("manualValor"),
+    btnManual: document.getElementById("btnManual"),
+    btnShare: document.getElementById("btnShare"),
+    btnCopy: document.getElementById("btnCopy"),
+    btnWhatsapp: document.getElementById("btnWhatsapp"),
+    btnTelegram: document.getElementById("btnTelegram"),
+    btnPng: document.getElementById("btnPng"),
+    btnPdf: document.getElementById("btnPdf"),
+    btnTxt: document.getElementById("btnTxt"),
+    btnCsv: document.getElementById("btnCsv"),
+    btnClear: document.getElementById("btnClear"),
+    status: document.getElementById("status"),
+    total: document.getElementById("total"),
+    tbody: document.getElementById("tbody"),
+    workCanvas: document.getElementById("workCanvas")
+  };
 
-    function nomeArquivoBase() {
-      const d = new Date();
-      const p = n => String(n).padStart(2, '0');
-      return 'qrcodes_pix_' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '_' + p(d.getHours()) + '-' + p(d.getMinutes());
-    }
+  let itens = load();
+  let stream = null;
+  let scanTimer = null;
+  let isScanning = false;
 
-    function gerarResumoTexto() {
-      const linhas = [];
-      linhas.push('RESUMO QR CODE PIX');
-      linhas.push('Data: ' + new Date().toLocaleString('pt-BR'));
-      linhas.push('Total capturado: ' + moedaBR.format(totalAtual()));
-      linhas.push('Quantidade: ' + itens.length);
-      linhas.push('');
+  init();
 
-      if (!itens.length) {
-        linhas.push('Nenhum item capturado.');
-        return linhas.join('\n');
-      }
+  function init(){
+    render();
 
-      itens.forEach((item, index) => {
-        linhas.push((index + 1) + '. ' + (item.beneficiario || 'Não identificado') + ' - ' + moedaBR.format(item.valor || 0));
-        if (item.cidade) linhas.push('   Cidade: ' + item.cidade);
-        if (item.txid) linhas.push('   TXID: ' + item.txid);
-        if (item.chavePix) linhas.push('   Chave: ' + item.chavePix);
-        if (item.urlPix) linhas.push('   URL Pix: ' + item.urlPix);
-        linhas.push('   Origem: ' + (item.origem || ''));
-        linhas.push('   Leitura: ' + (item.dataLeitura || ''));
-        linhas.push('');
-      });
-
-      return linhas.join('\n').trim();
-    }
-
-    async function copiarResumo() {
-      const texto = gerarResumoTexto();
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(texto);
-        } else {
-          const area = document.createElement('textarea');
-          area.value = texto;
-          area.style.position = 'fixed';
-          area.style.left = '-9999px';
-          document.body.appendChild(area);
-          area.focus();
-          area.select();
-          document.execCommand('copy');
-          document.body.removeChild(area);
-        }
-        setStatus('Resumo copiado para a área de transferência.');
-      } catch (erro) {
-        setStatus('Não consegui copiar automaticamente. Use WhatsApp, Telegram ou TXT.');
-      }
-    }
-
-    async function compartilharResumo() {
-      const texto = gerarResumoTexto();
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: 'Resumo QR Code Pix', text: texto });
-          setStatus('Resumo enviado para compartilhamento.');
-          return;
-        } catch (erro) {
-          setStatus('Compartilhamento cancelado ou indisponível.');
-          return;
-        }
-      }
-      await copiarResumo();
-    }
-
-    function abrirWhatsApp() {
-      const texto = encodeURIComponent(gerarResumoTexto());
-      window.open('https://wa.me/?text=' + texto, '_blank');
-    }
-
-    function abrirTelegram() {
-      const texto = encodeURIComponent(gerarResumoTexto());
-      window.open('https://t.me/share/url?url=&text=' + texto, '_blank');
-    }
-
-    function baixarTXT() {
-      const blob = new Blob([gerarResumoTexto()], { type: 'text/plain;charset=utf-8' });
-      baixarBlob(blob, nomeArquivoBase() + '.txt');
-    }
-
-    function baixarImagemPNG() {
-      const canvasImg = document.createElement('canvas');
-      const ctxImg = canvasImg.getContext('2d');
-      const largura = 1080;
-      const margem = 48;
-      const linhaAltura = 110;
-      const altura = Math.max(720, 260 + Math.max(1, itens.length) * linhaAltura + 80);
-
-      canvasImg.width = largura;
-      canvasImg.height = altura;
-
-      ctxImg.fillStyle = '#ffffff';
-      ctxImg.fillRect(0, 0, largura, altura);
-
-      ctxImg.fillStyle = '#111827';
-      ctxImg.font = 'bold 46px Arial';
-      ctxImg.fillText('Resumo QR Code Pix', margem, 78);
-
-      ctxImg.fillStyle = '#64748b';
-      ctxImg.font = '26px Arial';
-      ctxImg.fillText('Gerado em ' + new Date().toLocaleString('pt-BR'), margem, 120);
-
-      ctxImg.fillStyle = '#eaf7ee';
-      arredondarRetangulo(ctxImg, margem, 150, largura - margem * 2, 82, 20, true, false);
-      ctxImg.fillStyle = '#0f5132';
-      ctxImg.font = 'bold 34px Arial';
-      ctxImg.fillText('Total capturado', margem + 26, 202);
-      ctxImg.textAlign = 'right';
-      ctxImg.font = 'bold 42px Arial';
-      ctxImg.fillText(moedaBR.format(totalAtual()), largura - margem - 26, 205);
-      ctxImg.textAlign = 'left';
-
-      let y = 280;
-      if (!itens.length) {
-        ctxImg.fillStyle = '#334155';
-        ctxImg.font = '30px Arial';
-        ctxImg.fillText('Nenhum item capturado.', margem, y);
-      } else {
-        itens.forEach((item, index) => {
-          ctxImg.fillStyle = '#f8fafc';
-          arredondarRetangulo(ctxImg, margem, y - 42, largura - margem * 2, 92, 16, true, false);
-          ctxImg.strokeStyle = '#d9dee3';
-          ctxImg.lineWidth = 2;
-          arredondarRetangulo(ctxImg, margem, y - 42, largura - margem * 2, 92, 16, false, true);
-
-          ctxImg.fillStyle = '#111827';
-          ctxImg.font = 'bold 28px Arial';
-          ctxImg.fillText((index + 1) + '. ' + cortarTexto(item.beneficiario || 'Não identificado', 38), margem + 22, y);
-
-          ctxImg.textAlign = 'right';
-          ctxImg.font = 'bold 30px Arial';
-          ctxImg.fillText(moedaBR.format(item.valor || 0), largura - margem - 22, y);
-          ctxImg.textAlign = 'left';
-
-          ctxImg.fillStyle = '#64748b';
-          ctxImg.font = '22px Arial';
-          const detalhe = [
-            item.cidade ? 'Cidade: ' + item.cidade : '',
-            item.txid ? 'TXID: ' + item.txid : '',
-            item.dataLeitura ? 'Leitura: ' + item.dataLeitura : ''
-          ].filter(Boolean).join(' | ');
-          ctxImg.fillText(cortarTexto(detalhe, 80), margem + 22, y + 34);
-          y += linhaAltura;
-        });
-      }
-
-      canvasImg.toBlob(blob => {
-        baixarBlob(blob, nomeArquivoBase() + '.png');
-      }, 'image/png');
-    }
-
-    function baixarPDF() {
-      if (!itens.length) {
-        alert('Não há itens para gerar PDF.');
-        return;
-      }
-
-      try {
-        const jsPDFObj = window.jspdf && window.jspdf.jsPDF;
-        if (!jsPDFObj) throw new Error('jsPDF não carregado');
-
-        const pdf = new jsPDFObj({ orientation: 'p', unit: 'pt', format: 'a4' });
-        const margem = 42;
-        let y = 54;
-
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(20);
-        pdf.text('Resumo QR Code Pix', margem, y);
-
-        y += 24;
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(11);
-        pdf.text('Gerado em ' + new Date().toLocaleString('pt-BR'), margem, y);
-
-        y += 34;
-        pdf.setFillColor(234, 247, 238);
-        pdf.roundedRect(margem, y - 22, 510, 52, 10, 10, 'F');
-        pdf.setTextColor(15, 81, 50);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(16);
-        pdf.text('Total capturado: ' + moedaBR.format(totalAtual()), margem + 16, y + 9);
-        pdf.setTextColor(0, 0, 0);
-
-        y += 68;
-        itens.forEach((item, index) => {
-          if (y > 740) {
-            pdf.addPage();
-            y = 54;
-          }
-          pdf.setFont('helvetica', 'bold');
-          pdf.setFontSize(12);
-          pdf.text((index + 1) + '. ' + (item.beneficiario || 'Não identificado'), margem, y);
-          pdf.text(moedaBR.format(item.valor || 0), 470, y);
-          y += 17;
-
-          pdf.setFont('helvetica', 'normal');
-          pdf.setFontSize(10);
-          const detalhe = [
-            item.cidade ? 'Cidade: ' + item.cidade : '',
-            item.txid ? 'TXID: ' + item.txid : '',
-            item.chavePix ? 'Chave: ' + item.chavePix : '',
-            item.urlPix ? 'URL Pix: ' + item.urlPix : '',
-            item.origem ? 'Origem: ' + item.origem : '',
-            item.dataLeitura ? 'Leitura: ' + item.dataLeitura : ''
-          ].filter(Boolean).join(' | ');
-          const linhas = pdf.splitTextToSize(detalhe, 510);
-          pdf.text(linhas, margem, y);
-          y += linhas.length * 12 + 13;
-          pdf.setDrawColor(217, 222, 227);
-          pdf.line(margem, y, 552, y);
-          y += 15;
-        });
-
-        pdf.save(nomeArquivoBase() + '.pdf');
-        setStatus('PDF gerado.');
-      } catch (erro) {
-        const win = window.open('', '_blank');
-        if (!win) {
-          setStatus('Não consegui abrir a tela de impressão. Use TXT, CSV ou PNG.');
-          return;
-        }
-        win.document.write('<!doctype html><html><head><title>Resumo QR Code Pix</title><meta charset="utf-8"><style>body{font-family:Arial;padding:24px;white-space:pre-wrap}</style></head><body>' + escaparHTML(gerarResumoTexto()) + '<script>window.print()<\/script></body></html>');
-        win.document.close();
-      }
-    }
-
-    function baixarBlob(blob, nome) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = nome;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 500);
-    }
-
-    function cortarTexto(texto, max) {
-      const s = String(texto || '');
-      return s.length > max ? s.slice(0, max - 1) + '…' : s;
-    }
-
-    function arredondarRetangulo(ctxLocal, x, y, w, h, r, preencher, contornar) {
-      ctxLocal.beginPath();
-      ctxLocal.moveTo(x + r, y);
-      ctxLocal.arcTo(x + w, y, x + w, y + h, r);
-      ctxLocal.arcTo(x + w, y + h, x, y + h, r);
-      ctxLocal.arcTo(x, y + h, x, y, r);
-      ctxLocal.arcTo(x, y, x + w, y, r);
-      ctxLocal.closePath();
-      if (preencher) ctxLocal.fill();
-      if (contornar) ctxLocal.stroke();
-    }
-
-    function exportarCSV() {
-      if (!itens.length) {
-        alert('Não há itens para exportar.');
-        return;
-      }
-
-      const linhas = [];
-      linhas.push(['Item', 'Data leitura', 'Origem', 'Beneficiario', 'Cidade', 'Valor', 'TXID', 'Chave Pix', 'URL Pix'].join(';'));
-
-      itens.forEach((item, index) => {
-        linhas.push([
-          index + 1,
-          csv(item.dataLeitura),
-          csv(item.origem),
-          csv(item.beneficiario),
-          csv(item.cidade),
-          String(Number(item.valor || 0).toFixed(2)).replace('.', ','),
-          csv(item.txid),
-          csv(item.chavePix),
-          csv(item.urlPix)
-        ].join(';'));
-      });
-
-      const blob = new Blob(['\ufeff' + linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'qrcodes_pix_soma.csv';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    function csv(valor) {
-      const texto = String(valor || '');
-      return '"' + texto.replace(/"/g, '""') + '"';
-    }
-
-    window.addEventListener('beforeunload', () => {
-      if (streamAtual) streamAtual.getTracks().forEach(track => track.stop());
+    el.fileCamera.addEventListener("change", async (ev) => {
+      const files = Array.from(ev.target.files || []);
+      if (!files.length) return;
+      await processFiles(files);
+      el.fileCamera.value = "";
     });
 
-    carregarLocal();
-    testarSuporte();
-  </script>
+    el.fileGallery.addEventListener("change", async (ev) => {
+      const files = Array.from(ev.target.files || []);
+      if (!files.length) return;
+      await processFiles(files);
+      el.fileGallery.value = "";
+    });
+
+    el.btnShowCamera.addEventListener("click", async () => {
+      el.cameraBox.classList.toggle("active");
+      if (el.cameraBox.classList.contains("active")){
+        el.btnShowCamera.textContent = "🙈 Ocultar câmera ao vivo";
+        setStatus("Câmera ao vivo liberada na tela. Clique em Iniciar câmera somente se for usar.", "ok");
+        await listCameras();
+      }else{
+        el.btnShowCamera.textContent = "🎥 Usar câmera ao vivo";
+        stopCamera();
+        setStatus("Câmera ao vivo ocultada. A leitura por foto/imagem continua disponível.", "ok");
+      }
+    });
+
+    el.btnStartCamera.addEventListener("click", startCamera);
+    el.btnStopCamera.addEventListener("click", stopCamera);
+
+    el.btnManual.addEventListener("click", addManual);
+    el.btnClear.addEventListener("click", clearAll);
+    el.btnCopy.addEventListener("click", copyResumo);
+    el.btnShare.addEventListener("click", shareResumo);
+    el.btnWhatsapp.addEventListener("click", openWhatsapp);
+    el.btnTelegram.addEventListener("click", openTelegram);
+    el.btnTxt.addEventListener("click", downloadTxt);
+    el.btnCsv.addEventListener("click", downloadCsv);
+    el.btnPng.addEventListener("click", downloadPng);
+    el.btnPdf.addEventListener("click", downloadPdf);
+
+    setStatus("Pronto. Tire a foto do QR Code ou escolha uma imagem.", "ok");
+  }
+
+  function setStatus(msg, type){
+    const cls = type === "bad" ? "bad" : type === "ok" ? "ok" : "";
+    el.status.innerHTML = cls ? `<span class="${cls}">${escapeHtml(msg)}</span>` : escapeHtml(msg);
+  }
+
+  async function processFiles(files){
+    let lidos = 0;
+    let ignorados = 0;
+
+    for (const file of files){
+      try{
+        setStatus("Lendo imagem: " + file.name);
+        const qrText = await decodeQrFromImageFile(file);
+
+        if (!qrText){
+          ignorados++;
+          setStatus("Não localizei QR Code nessa imagem. Tire a foto mais reta, mais próxima e com boa luz.", "bad");
+          continue;
+        }
+
+        const ok = processarQRCode(qrText, "imagem");
+        if (ok) lidos++;
+        else ignorados++;
+      }catch(err){
+        ignorados++;
+        console.error(err);
+        setStatus("Erro ao ler a imagem. Tente outra foto do QR Code.", "bad");
+      }
+    }
+
+    if (lidos > 0){
+      setStatus(`Leitura concluída. ${lidos} item(ns) adicionado(s). ${ignorados ? ignorados + " ignorado(s)." : ""}`, "ok");
+    }else if (ignorados > 0){
+      setStatus("Nenhum item novo foi adicionado.", "bad");
+    }
+  }
+
+  function decodeQrFromImageFile(file){
+    return new Promise((resolve, reject) => {
+      if (typeof jsQR === "undefined"){
+        reject(new Error("Biblioteca jsQR não carregou."));
+        return;
+      }
+
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+
+      img.onload = () => {
+        try{
+          const canvas = el.workCanvas;
+          const ctx = canvas.getContext("2d", { willReadFrequently:true });
+
+          const maxSide = 2000;
+          let w = img.naturalWidth || img.width;
+          let h = img.naturalHeight || img.height;
+
+          const scale = Math.min(1, maxSide / Math.max(w, h));
+          w = Math.max(1, Math.round(w * scale));
+          h = Math.max(1, Math.round(h * scale));
+
+          canvas.width = w;
+          canvas.height = h;
+          ctx.drawImage(img, 0, 0, w, h);
+
+          let imageData = ctx.getImageData(0, 0, w, h);
+          let code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "attemptBoth"
+          });
+
+          if (!code){
+            const data = imageData.data;
+            for (let i=0; i<data.length; i+=4){
+              const avg = (data[i] + data[i+1] + data[i+2]) / 3;
+              const v = avg > 128 ? 255 : 0;
+              data[i] = data[i+1] = data[i+2] = v;
+            }
+            ctx.putImageData(imageData, 0, 0);
+            imageData = ctx.getImageData(0, 0, w, h);
+            code = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: "attemptBoth"
+            });
+          }
+
+          URL.revokeObjectURL(url);
+          resolve(code && code.data ? String(code.data).trim() : "");
+        }catch(e){
+          URL.revokeObjectURL(url);
+          reject(e);
+        }
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Imagem inválida."));
+      };
+
+      img.src = url;
+    });
+  }
+
+  async function listCameras(){
+    try{
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cams = devices.filter(d => d.kind === "videoinput");
+
+      const old = el.cameraSelect.value;
+      el.cameraSelect.innerHTML = `<option value="">Câmera traseira automática</option>`;
+
+      cams.forEach((cam, i) => {
+        const opt = document.createElement("option");
+        opt.value = cam.deviceId;
+        opt.textContent = cam.label || `Câmera ${i + 1}`;
+        el.cameraSelect.appendChild(opt);
+      });
+
+      if (old) el.cameraSelect.value = old;
+    }catch(e){
+      console.warn(e);
+    }
+  }
+
+  async function startCamera(){
+    try{
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        setStatus("Este navegador não liberou acesso à câmera. Use a leitura por foto/imagem.", "bad");
+        return;
+      }
+
+      stopCamera(false);
+
+      const selected = el.cameraSelect.value;
+      const constraints = {
+        video: selected
+          ? { deviceId: { exact:selected } }
+          : { facingMode: { ideal:"environment" }, width:{ ideal:1280 }, height:{ ideal:720 } },
+        audio:false
+      };
+
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      el.video.srcObject = stream;
+      await el.video.play();
+
+      await listCameras();
+
+      isScanning = true;
+      scanLoop();
+
+      setStatus("Câmera iniciada. Aproxime o QR Code.", "ok");
+    }catch(err){
+      console.error(err);
+      setStatus("Não consegui iniciar a câmera. Use Tirar foto do QR Code.", "bad");
+    }
+  }
+
+  function stopCamera(showMsg=true){
+    isScanning = false;
+
+    if (scanTimer){
+      clearTimeout(scanTimer);
+      scanTimer = null;
+    }
+
+    if (stream){
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+
+    el.video.pause();
+    el.video.srcObject = null;
+
+    if (showMsg) setStatus("Câmera parada.", "ok");
+  }
+
+  function scanLoop(){
+    if (!isScanning || !el.video.videoWidth){
+      scanTimer = setTimeout(scanLoop, 250);
+      return;
+    }
+
+    try{
+      const canvas = el.workCanvas;
+      const ctx = canvas.getContext("2d", { willReadFrequently:true });
+      const w = el.video.videoWidth;
+      const h = el.video.videoHeight;
+
+      canvas.width = w;
+      canvas.height = h;
+      ctx.drawImage(el.video, 0, 0, w, h);
+
+      const imageData = ctx.getImageData(0, 0, w, h);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: "attemptBoth"
+      });
+
+      if (code && code.data){
+        processarQRCode(String(code.data).trim(), "camera");
+      }
+    }catch(e){
+      console.warn(e);
+    }
+
+    scanTimer = setTimeout(scanLoop, 500);
+  }
+
+  function processarQRCode(payload, origem){
+    const raw = String(payload || "").trim();
+    if (!raw){
+      setStatus("QR Code vazio.", "bad");
+      return false;
+    }
+
+    const hash = hashText(raw);
+    if (itens.some(x => x.hash === hash)){
+      setStatus("QR Code já estava na lista. Não foi somado novamente.", "bad");
+      return false;
+    }
+
+    const dados = extrairDadosPix(raw);
+
+    if (!dados.valor || dados.valor <= 0){
+      setStatus("QR Code lido, mas não encontrei valor fixo no Pix. Adicione o valor manualmente.", "bad");
+      return false;
+    }
+
+    itens.push({
+      id: Date.now() + "_" + Math.random().toString(36).slice(2),
+      hash,
+      origem: origem || "imagem",
+      beneficiario: dados.beneficiario || "PIX",
+      cidade: dados.cidade || "",
+      txid: dados.txid || "",
+      chave: dados.chave || "",
+      valor: dados.valor,
+      leitura: nowBR(),
+      raw
+    });
+
+    save();
+    render();
+    setStatus("QR Code adicionado: " + formatMoney(dados.valor), "ok");
+    return true;
+  }
+
+  function extrairDadosPix(payload){
+    const tags = parseTLV(String(payload || ""));
+
+    const out = {
+      beneficiario:"",
+      cidade:"",
+      txid:"",
+      chave:"",
+      valor:0
+    };
+
+    const tag54 = getFirst(tags, "54");
+    if (tag54) out.valor = normalizarValor(tag54.value);
+
+    const tag59 = getFirst(tags, "59");
+    if (tag59) out.beneficiario = cleanText(tag59.value);
+
+    const tag60 = getFirst(tags, "60");
+    if (tag60) out.cidade = cleanText(tag60.value);
+
+    const tag62 = getFirst(tags, "62");
+    if (tag62){
+      const sub62 = parseTLV(tag62.value);
+      const sub05 = getFirst(sub62, "05");
+      if (sub05) out.txid = cleanText(sub05.value);
+    }
+
+    const merchantInfo = tags.filter(t => {
+      const n = Number(t.id);
+      return n >= 26 && n <= 51;
+    });
+
+    for (const mi of merchantInfo){
+      const sub = parseTLV(mi.value);
+      const gui = getFirst(sub, "00");
+      if (gui && /br\.gov\.bcb\.pix/i.test(gui.value)){
+        const key = getFirst(sub, "01");
+        if (key) out.chave = cleanText(key.value);
+        break;
+      }
+    }
+
+    return out;
+  }
+
+  function parseTLV(str){
+    const out = [];
+    let i = 0;
+    const s = String(str || "");
+
+    while (i + 4 <= s.length){
+      const id = s.slice(i, i + 2);
+      const lenText = s.slice(i + 2, i + 4);
+
+      if (!/^\d{2}$/.test(id) || !/^\d{2}$/.test(lenText)) break;
+
+      const len = Number(lenText);
+      const start = i + 4;
+      const end = start + len;
+
+      if (!Number.isFinite(len) || len < 0 || end > s.length) break;
+
+      out.push({ id, len, value: s.slice(start, end) });
+      i = end;
+    }
+
+    return out;
+  }
+
+  function getFirst(tags, id){
+    return (tags || []).find(t => t.id === id) || null;
+  }
+
+  function normalizarValor(valorBruto){
+    let s = String(valorBruto || "").trim();
+    s = s.replace(/[^\d.,-]/g, "");
+
+    if (!s) return 0;
+
+    const hasComma = s.includes(",");
+    const hasDot = s.includes(".");
+
+    if (hasComma && hasDot){
+      if (s.lastIndexOf(",") > s.lastIndexOf(".")){
+        s = s.replace(/\./g, "").replace(",", ".");
+      }else{
+        s = s.replace(/,/g, "");
+      }
+    }else if (hasComma){
+      const parts = s.split(",");
+      const dec = parts.pop();
+      const inteiro = parts.join("");
+      if (dec.length === 1 || dec.length === 2){
+        s = inteiro.replace(/\D/g, "") + "." + dec;
+      }else{
+        s = s.replace(/,/g, "");
+      }
+    }else if (hasDot){
+      const parts = s.split(".");
+      const dec = parts[parts.length - 1];
+
+      if (parts.length === 2 && (dec.length === 1 || dec.length === 2)){
+        s = parts[0].replace(/\D/g, "") + "." + dec;
+      }else if (parts.length > 2 && (dec.length === 1 || dec.length === 2)){
+        s = parts.slice(0, -1).join("").replace(/\D/g, "") + "." + dec;
+      }else{
+        s = s.replace(/\./g, "");
+      }
+    }
+
+    const n = Number(s);
+    return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
+  }
+
+  function addManual(){
+    const valor = normalizarValor(el.manualValor.value);
+    if (!valor || valor <= 0){
+      setStatus("Informe um valor válido. Ex.: 164,28", "bad");
+      return;
+    }
+
+    const ref = "MANUAL|" + valor + "|" + Date.now() + "|" + Math.random();
+
+    itens.push({
+      id: Date.now() + "_" + Math.random().toString(36).slice(2),
+      hash: hashText(ref),
+      origem:"manual",
+      beneficiario:"VALOR MANUAL",
+      cidade:"",
+      txid:"",
+      chave:"",
+      valor,
+      leitura:nowBR(),
+      raw:ref
+    });
+
+    el.manualValor.value = "";
+    save();
+    render();
+    setStatus("Valor manual adicionado: " + formatMoney(valor), "ok");
+  }
+
+  function render(){
+    const total = itens.reduce((sum, item) => sum + Number(item.valor || 0), 0);
+    el.total.textContent = formatMoney(total);
+
+    if (!itens.length){
+      el.tbody.innerHTML = `<tr><td colspan="4" class="small">Nenhum QR Code capturado ainda.</td></tr>`;
+      return;
+    }
+
+    el.tbody.innerHTML = itens.map((item, idx) => {
+      const meta = [
+        "Leitura: " + escapeHtml(item.leitura || ""),
+        "Origem: " + escapeHtml(item.origem || ""),
+        item.cidade ? "Cidade: " + escapeHtml(item.cidade) : "",
+        item.txid ? "TXID: " + escapeHtml(item.txid) : "",
+        item.chave ? "Chave: " + escapeHtml(item.chave) : ""
+      ].filter(Boolean).join("<br>");
+
+      return `
+        <tr>
+          <td class="idx">${idx + 1}</td>
+          <td>
+            <div class="name">${escapeHtml(item.beneficiario || "PIX")}</div>
+            <div class="meta">${meta}</div>
+          </td>
+          <td class="amount">${formatMoney(item.valor)}</td>
+          <td><button class="remove" type="button" data-remove="${escapeHtml(item.id)}">Remover</button></td>
+        </tr>
+      `;
+    }).join("");
+
+    el.tbody.querySelectorAll("[data-remove]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-remove");
+        itens = itens.filter(x => x.id !== id);
+        save();
+        render();
+      });
+    });
+  }
+
+  function buildResumo(){
+    const total = itens.reduce((sum, item) => sum + Number(item.valor || 0), 0);
+    const linhas = [];
+    const valores = itens.map(item => formatMoney(item.valor)).join(" + ");
+
+    linhas.push("📌 RESUMO DOS QR CODES PIX");
+    linhas.push("📅 Gerado em: " + nowBR());
+    linhas.push("━━━━━━━━━━━━━━━━━━━━");
+    linhas.push("💰 TOTAL CAPTURADO: " + formatMoney(total));
+    linhas.push("🧾 QUANTIDADE: " + itens.length);
+    linhas.push("━━━━━━━━━━━━━━━━━━━━");
+
+    if (!itens.length){
+      linhas.push("Nenhum item capturado.");
+    }else{
+      linhas.push("");
+      linhas.push("📋 DETALHAMENTO:");
+
+      itens.forEach((item, idx) => {
+        linhas.push("");
+        linhas.push(`${idx + 1}) ${item.beneficiario || "PIX"}`);
+        linhas.push(`💵 Valor: ${formatMoney(item.valor)}`);
+
+        if (item.cidade) linhas.push("📍 Cidade: " + item.cidade);
+        if (item.txid) linhas.push("🆔 TXID: " + item.txid);
+        if (item.chave) linhas.push("🔑 Chave Pix: " + item.chave);
+
+        linhas.push("📷 Origem: " + (item.origem || "imagem"));
+        linhas.push("⏱️ Leitura: " + item.leitura);
+      });
+
+      linhas.push("");
+      linhas.push("━━━━━━━━━━━━━━━━━━━━");
+      linhas.push("🧮 CONFERÊNCIA:");
+      linhas.push(valores + " = " + formatMoney(total));
+      linhas.push("");
+      linhas.push("⚠️ Confira os dados antes de efetuar qualquer pagamento.");
+    }
+
+    return linhas.join("
+").trim();
+  }
+
+  function copyResumo(){
+    const text = buildResumo();
+
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text)
+        .then(() => setStatus("Resumo copiado.", "ok"))
+        .catch(() => fallbackCopy(text));
+    }else{
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text){
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+
+    try{
+      document.execCommand("copy");
+      setStatus("Resumo copiado.", "ok");
+    }catch(e){
+      setStatus("Não consegui copiar automaticamente. Use o compartilhamento.", "bad");
+    }
+
+    document.body.removeChild(ta);
+  }
+
+  async function shareResumo(){
+    const text = buildResumo();
+
+    if (navigator.share){
+      try{
+        await navigator.share({
+          title:"Resumo QR Code Pix",
+          text
+        });
+        setStatus("Resumo compartilhado.", "ok");
+      }catch(e){
+        setStatus("Compartilhamento cancelado ou indisponível.", "bad");
+      }
+    }else{
+      openWhatsapp();
+    }
+  }
+
+  function openWhatsapp(){
+    window.open("https://wa.me/?text=" + encodeURIComponent(buildResumo()), "_blank");
+  }
+
+  function openTelegram(){
+    window.open("https://t.me/share/url?url=&text=" + encodeURIComponent(buildResumo()), "_blank");
+  }
+
+  function downloadTxt(){
+    downloadBlob(buildResumo(), "resumo_qrcode_pix.txt", "text/plain;charset=utf-8");
+  }
+
+  function downloadCsv(){
+    const rows = [
+      ["#", "Beneficiário", "Valor", "Cidade", "TXID", "Chave", "Origem", "Leitura"]
+    ];
+
+    itens.forEach((item, idx) => {
+      rows.push([
+        idx + 1,
+        item.beneficiario || "PIX",
+        formatMoney(item.valor),
+        item.cidade || "",
+        item.txid || "",
+        item.chave || "",
+        item.origem || "",
+        item.leitura || ""
+      ]);
+    });
+
+    const csv = rows.map(row => row.map(csvCell).join(";")).join("\n");
+    downloadBlob(csv, "resumo_qrcode_pix.csv", "text/csv;charset=utf-8");
+  }
+
+  function downloadPng(){
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const width = 1080;
+    const rowH = 122;
+    const headerH = 250;
+    const footerH = 80;
+    const height = Math.max(720, headerH + (Math.max(1, itens.length) * rowH) + footerH);
+
+    canvas.width = width;
+    canvas.height = height;
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = "#1f2937";
+    ctx.font = "bold 48px Arial";
+    ctx.fillText("Resumo QR Code Pix", 50, 80);
+
+    ctx.fillStyle = "#667085";
+    ctx.font = "28px Arial";
+    ctx.fillText("Gerado em " + nowBR(), 50, 125);
+
+    const total = itens.reduce((sum, item) => sum + Number(item.valor || 0), 0);
+
+    roundRect(ctx, 50, 155, 980, 82, 26, "#e7f7ee", "#9fe2b8");
+    ctx.fillStyle = "#075e2c";
+    ctx.font = "bold 34px Arial";
+    ctx.fillText("TOTAL", 85, 207);
+
+    ctx.textAlign = "right";
+    ctx.font = "bold 48px Arial";
+    ctx.fillText(formatMoney(total), 995, 212);
+    ctx.textAlign = "left";
+
+    let y = 290;
+
+    if (!itens.length){
+      ctx.fillStyle = "#344054";
+      ctx.font = "30px Arial";
+      ctx.fillText("Nenhum item capturado.", 50, y);
+    }else{
+      itens.forEach((item, idx) => {
+        roundRect(ctx, 50, y - 46, 980, 100, 20, "#f8fafc", "#d7dde7");
+
+        ctx.fillStyle = "#1f2937";
+        ctx.font = "bold 30px Arial";
+        ctx.fillText((idx + 1) + ". " + truncate(item.beneficiario || "PIX", 38), 80, y);
+
+        ctx.textAlign = "right";
+        ctx.font = "bold 34px Arial";
+        ctx.fillText(formatMoney(item.valor), 995, y);
+        ctx.textAlign = "left";
+
+        ctx.fillStyle = "#667085";
+        ctx.font = "24px Arial";
+        const detalhe = [
+          item.cidade ? "Cidade: " + item.cidade : "",
+          item.txid ? "TXID: " + item.txid : "",
+          "Leitura: " + item.leitura
+        ].filter(Boolean).join(" | ");
+
+        ctx.fillText(truncate(detalhe, 78), 80, y + 38);
+        y += rowH;
+      });
+    }
+
+    canvas.toBlob(blob => {
+      downloadBlob(blob, "resumo_qrcode_pix.png", "image/png");
+      setStatus("Imagem PNG gerada.", "ok");
+    }, "image/png");
+  }
+
+  function downloadPdf(){
+    try{
+      if (!window.jspdf || !window.jspdf.jsPDF){
+        throw new Error("jsPDF indisponível");
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation:"portrait", unit:"pt", format:"a4" });
+      const total = itens.reduce((sum, item) => sum + Number(item.valor || 0), 0);
+
+      const margin = 42;
+      let y = 55;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
+      doc.text("Resumo QR Code Pix", margin, y);
+
+      y += 24;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.text("Gerado em " + nowBR(), margin, y);
+
+      y += 38;
+      doc.setFillColor(231, 247, 238);
+      doc.roundedRect(margin, y - 24, 510, 54, 12, 12, "F");
+
+      doc.setTextColor(7, 94, 44);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("TOTAL: " + formatMoney(total), margin + 18, y + 10);
+
+      doc.setTextColor(31, 41, 55);
+      y += 70;
+
+      if (!itens.length){
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(12);
+        doc.text("Nenhum item capturado.", margin, y);
+      }else{
+        itens.forEach((item, idx) => {
+          if (y > 735){
+            doc.addPage();
+            y = 55;
+          }
+
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(12);
+          doc.text(`${idx + 1}. ${item.beneficiario || "PIX"}`, margin, y);
+          doc.text(formatMoney(item.valor), 470, y);
+
+          y += 18;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10);
+
+          const detalhes = [];
+          if (item.cidade) detalhes.push("Cidade: " + item.cidade);
+          if (item.txid) detalhes.push("TXID: " + item.txid);
+          if (item.chave) detalhes.push("Chave: " + item.chave);
+          detalhes.push("Origem: " + item.origem);
+          detalhes.push("Leitura: " + item.leitura);
+
+          const wrapped = doc.splitTextToSize(detalhes.join(" | "), 510);
+          doc.text(wrapped, margin, y);
+          y += wrapped.length * 13 + 12;
+
+          doc.setDrawColor(215,221,231);
+          doc.line(margin, y, 552, y);
+          y += 16;
+        });
+      }
+
+      doc.save("resumo_qrcode_pix.pdf");
+      setStatus("PDF gerado.", "ok");
+    }catch(e){
+      const w = window.open("", "_blank");
+      if (!w){
+        setStatus("Não consegui abrir a impressão do PDF. Use PNG ou TXT.", "bad");
+        return;
+      }
+
+      const safe = escapeHtml(buildResumo()).replace(/\n/g, "<br>");
+      w.document.write(`
+        <html><head><title>Resumo QR Code Pix</title>
+        <style>body{font-family:Arial;padding:24px}pre{white-space:pre-wrap;font-size:14px}</style>
+        </head><body><pre>${safe}</pre><script>window.print();<\/script></body></html>
+      `);
+      w.document.close();
+    }
+  }
+
+  function clearAll(){
+    if (!itens.length){
+      setStatus("A lista já está vazia.", "ok");
+      return;
+    }
+
+    if (!confirm("Limpar todos os itens capturados?")) return;
+
+    itens = [];
+    save();
+    render();
+    setStatus("Lista limpa.", "ok");
+  }
+
+  function save(){
+    localStorage.setItem(APP_KEY, JSON.stringify(itens));
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(APP_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr.filter(x => x && Number.isFinite(Number(x.valor))) : [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  function formatMoney(valor){
+    const n = Number(valor || 0);
+    return n.toLocaleString("pt-BR", {
+      style:"currency",
+      currency:"BRL"
+    });
+  }
+
+  function nowBR(){
+    return new Date().toLocaleString("pt-BR", {
+      timeZone:"America/Sao_Paulo",
+      day:"2-digit",
+      month:"2-digit",
+      year:"numeric",
+      hour:"2-digit",
+      minute:"2-digit",
+      second:"2-digit"
+    });
+  }
+
+  function cleanText(s){
+    return String(s || "").trim().replace(/\s+/g, " ");
+  }
+
+  function hashText(str){
+    let h1 = 0xdeadbeef ^ str.length;
+    let h2 = 0x41c6ce57 ^ str.length;
+
+    for (let i=0, ch; i<str.length; i++){
+      ch = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+  }
+
+  function csvCell(value){
+    const s = String(value === undefined || value === null ? "" : value);
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+
+  function downloadBlob(content, filename, type){
+    const blob = content instanceof Blob ? content : new Blob([content], { type: type || "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = filename;
+
+    document.body.appendChild(a);
+    a.click();
+
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 400);
+  }
+
+  function escapeHtml(s){
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function truncate(s, max){
+    s = String(s || "");
+    return s.length > max ? s.slice(0, max - 1) + "…" : s;
+  }
+
+  function roundRect(ctx, x, y, w, h, r, fill, stroke){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+
+    if (fill){
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
+
+    if (stroke){
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
+})();
+</script>
 </body>
 </html>
