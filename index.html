@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leitor de QR Code Pix - Soma Simples</title>
+
+  <!-- Biblioteca simples para leitura de QR Code pela câmera -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+  <style>
+    :root {
+      --azul: #0b5ed7;
+      --verde: #198754;
+      --vermelho: #dc3545;
+      --cinza: #f4f6f8;
+      --borda: #d9dee3;
+      --texto: #1f2937;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--cinza);
+      color: var(--texto);
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--borda);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.08);
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 0 0 8px 0;
+      text-align: center;
+    }
+
+    .subtitulo {
+      text-align: center;
+      font-size: 14px;
+      color: #606b78;
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+
+    #reader {
+      width: 100%;
+      min-height: 280px;
+      border: 2px dashed var(--borda);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fafafa;
+    }
+
+    .botoes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 13px 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #ffffff;
+    }
+
+    .btn-azul { background: var(--azul); }
+    .btn-verde { background: var(--verde); }
+    .btn-vermelho { background: var(--vermelho); }
+    .btn-cinza { background: #6c757d; }
+
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 10px;
+      background: #eef4ff;
+      color: #174ea6;
+      font-size: 14px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 800;
+      padding: 14px;
+      border-radius: 12px;
+      background: #eaf7ee;
+      color: #0f5132;
+      margin-bottom: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--borda);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      font-size: 13px;
+    }
+
+    .valor {
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .pequeno {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 3px;
+      word-break: break-word;
+    }
+
+    .sem-itens {
+      text-align: center;
+      color: #64748b;
+      padding: 18px;
+      border: 1px dashed var(--borda);
+      border-radius: 10px;
+      background: #fafafa;
+    }
+
+    .remover {
+      background: var(--vermelho);
+      padding: 7px 9px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+
+    .linha-form {
+      display: grid;
+      grid-template-columns: 1fr 140px;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--borda);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 15px;
+    }
+
+    @media (max-width: 560px) {
+      .botoes, .linha-form {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 19px;
+      }
+
+      table {
+        font-size: 12px;
+      }
+
+      th, td {
+        padding: 8px 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Leitor de QR Code Pix</h1>
+      <div class="subtitulo">
+        Escaneie vários QR Codes Pix em sequência. O sistema tenta capturar o valor automaticamente e soma tudo.
+      </div>
+
+      <div id="reader"></div>
+
+      <div class="botoes">
+        <button id="btnIniciar" class="btn-azul" onclick="iniciarCamera()">📷 Iniciar câmera</button>
+        <button id="btnParar" class="btn-cinza" onclick="pararCamera()" disabled>⏹️ Parar câmera</button>
+      </div>
+
+      <div class="linha-form">
+        <input id="valorManual" type="text" inputmode="decimal" placeholder="Valor manual, ex.: 164,28" />
+        <button class="btn-verde" onclick="adicionarManual()">➕ Adicionar</button>
+      </div>
+
+      <div id="status" class="status">Aguardando início da câmera.</div>
+    </div>
+
+    <div class="card">
+      <div class="total">
+        <span>Total capturado</span>
+        <span id="total">R$ 0,00</span>
+      </div>
+
+      <div class="botoes" style="margin-bottom: 12px;">
+        <button class="btn-cinza" onclick="exportarCSV()">📤 Exportar CSV</button>
+        <button class="btn-vermelho" onclick="limparTudo()">🗑️ Limpar tudo</button>
+      </div>
+
+      <div id="lista"></div>
+    </div>
+  </div>
+
+  <script>
+    let leitor = null;
+    let cameraAtiva = false;
+    let bloqueadoLeitura = false;
+    let itens = [];
+    let qrsLidos = new Set();
+
+    const moedaBR = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+
+    function setStatus(msg) {
+      document.getElementById('status').innerText = msg;
+    }
+
+    function normalizarValor(valorTexto) {
+      if (!valorTexto) return null;
+
+      let txt = String(valorTexto).trim();
+      txt = txt.replace('R$', '').replace(/\s/g, '');
+
+      // Aceita 164,28 ou 164.28
+      if (txt.includes(',') && txt.includes('.')) {
+        txt = txt.replace(/\./g, '').replace(',', '.');
+      } else {
+        txt = txt.replace(',', '.');
+      }
+
+      const valor = Number(txt);
+      if (!Number.isFinite(valor) || valor < 0) return null;
+      return Math.round(valor * 100) / 100;
+    }
+
+    function parseTLV(texto) {
+      const campos = [];
+      let i = 0;
+
+      while (i + 4 <= texto.length) {
+        const tag = texto.substring(i, i + 2);
+        const lenTxt = texto.substring(i + 2, i + 4);
+        const len = parseInt(lenTxt, 10);
+
+        if (!/^\d{2}$/.test(tag) || !/^\d{2}$/.test(lenTxt) || !Number.isFinite(len)) {
+          break;
+        }
+
+        const inicioValor = i + 4;
+        const fimValor = inicioValor + len;
+
+        if (fimValor > texto.length) break;
+
+        const value = texto.substring(inicioValor, fimValor);
+        campos.push({ tag, len, value });
+        i = fimValor;
+      }
+
+      return campos;
+    }
+
+    function obterCampo(campos, tag) {
+      const item = campos.find(c => c.tag === tag);
+      return item ? item.value : '';
+    }
+
+    function extrairDadosPix(conteudoQR) {
+      const campos = parseTLV(conteudoQR);
+
+      const valor = normalizarValor(obterCampo(campos, '54'));
+      const beneficiario = obterCampo(campos, '59') || 'Não identificado';
+      const cidade = obterCampo(campos, '60') || '';
+
+      let txid = '';
+      const adicional = obterCampo(campos, '62');
+      if (adicional) {
+        const camposAdicionais = parseTLV(adicional);
+        txid = obterCampo(camposAdicionais, '05');
+      }
+
+      let chavePix = '';
+      for (const campo of campos) {
+        const tagNumerica = Number(campo.tag);
+        if (tagNumerica >= 26 && tagNumerica <= 51 && campo.value.includes('br.gov.bcb.pix')) {
+          const contaPix = parseTLV(campo.value);
+          chavePix = obterCampo(contaPix, '01');
+          break;
+        }
+      }
+
+      return {
+        valor,
+        beneficiario,
+        cidade,
+        txid,
+        chavePix,
+        conteudo: conteudoQR
+      };
+    }
+
+    async function iniciarCamera() {
+      if (cameraAtiva) return;
+
+      try {
+        leitor = new Html5Qrcode('reader');
+
+        const config = {
+          fps: 10,
+          qrbox: function(viewfinderWidth, viewfinderHeight) {
+            const tamanho = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.75);
+            return { width: tamanho, height: tamanho };
+          },
+          rememberLastUsedCamera: true
+        };
+
+        await leitor.start(
+          { facingMode: 'environment' },
+          config,
+          function(decodedText) {
+            processarQRCode(decodedText);
+          },
+          function() {
+            // Falhas de leitura acontecem normalmente enquanto a câmera está procurando o QR Code.
+          }
+        );
+
+        cameraAtiva = true;
+        document.getElementById('btnIniciar').disabled = true;
+        document.getElementById('btnParar').disabled = false;
+        setStatus('Câmera ativa. Aponte para o QR Code Pix.');
+      } catch (erro) {
+        setStatus('Erro ao abrir câmera: ' + erro);
+      }
+    }
+
+    async function pararCamera() {
+      if (!leitor || !cameraAtiva) return;
+
+      try {
+        await leitor.stop();
+        await leitor.clear();
+      } catch (erro) {
+        console.warn(erro);
+      }
+
+      cameraAtiva = false;
+      document.getElementById('btnIniciar').disabled = false;
+      document.getElementById('btnParar').disabled = true;
+      setStatus('Câmera parada.');
+    }
+
+    function processarQRCode(decodedText) {
+      if (bloqueadoLeitura) return;
+      bloqueadoLeitura = true;
+      setTimeout(() => bloqueadoLeitura = false, 1400);
+
+      const conteudo = String(decodedText || '').trim();
+      if (!conteudo) return;
+
+      if (qrsLidos.has(conteudo)) {
+        setStatus('QR Code já foi lido e não será somado novamente.');
+        return;
+      }
+
+      const dados = extrairDadosPix(conteudo);
+      let valor = dados.valor;
+
+      if (valor === null) {
+        const digitado = prompt('Não encontrei valor fixo dentro do QR Code. Informe o valor manualmente, ex.: 164,28');
+        valor = normalizarValor(digitado);
+
+        if (valor === null) {
+          setStatus('QR Code lido, mas sem valor válido. Nada foi adicionado.');
+          return;
+        }
+      }
+
+      qrsLidos.add(conteudo);
+
+      itens.push({
+        id: Date.now() + '-' + Math.random().toString(16).slice(2),
+        valor,
+        beneficiario: dados.beneficiario,
+        cidade: dados.cidade,
+        txid: dados.txid,
+        chavePix: dados.chavePix,
+        conteudo,
+        dataLeitura: new Date().toLocaleString('pt-BR')
+      });
+
+      salvarLocal();
+      renderizar();
+      setStatus('QR Code adicionado: ' + moedaBR.format(valor));
+    }
+
+    function adicionarManual() {
+      const input = document.getElementById('valorManual');
+      const valor = normalizarValor(input.value);
+
+      if (valor === null) {
+        alert('Informe um valor válido, por exemplo: 164,28');
+        return;
+      }
+
+      itens.push({
+        id: Date.now() + '-' + Math.random().toString(16).slice(2),
+        valor,
+        beneficiario: 'Valor manual',
+        cidade: '',
+        txid: '',
+        chavePix: '',
+        conteudo: 'MANUAL-' + Date.now(),
+        dataLeitura: new Date().toLocaleString('pt-BR')
+      });
+
+      input.value = '';
+      salvarLocal();
+      renderizar();
+      setStatus('Valor manual adicionado: ' + moedaBR.format(valor));
+    }
+
+    function removerItem(id) {
+      const item = itens.find(i => i.id === id);
+      if (item && item.conteudo && !item.conteudo.startsWith('MANUAL-')) {
+        qrsLidos.delete(item.conteudo);
+      }
+
+      itens = itens.filter(i => i.id !== id);
+      salvarLocal();
+      renderizar();
+    }
+
+    function limparTudo() {
+      if (!confirm('Deseja limpar todos os valores capturados?')) return;
+      itens = [];
+      qrsLidos = new Set();
+      salvarLocal();
+      renderizar();
+      setStatus('Lista limpa.');
+    }
+
+    function salvarLocal() {
+      localStorage.setItem('PSS_PIX_QRCODE_ITENS', JSON.stringify(itens));
+      localStorage.setItem('PSS_PIX_QRCODE_LIDOS', JSON.stringify(Array.from(qrsLidos)));
+    }
+
+    function carregarLocal() {
+      try {
+        itens = JSON.parse(localStorage.getItem('PSS_PIX_QRCODE_ITENS') || '[]');
+        qrsLidos = new Set(JSON.parse(localStorage.getItem('PSS_PIX_QRCODE_LIDOS') || '[]'));
+      } catch (erro) {
+        itens = [];
+        qrsLidos = new Set();
+      }
+      renderizar();
+    }
+
+    function renderizar() {
+      const total = itens.reduce((soma, item) => soma + Number(item.valor || 0), 0);
+      document.getElementById('total').innerText = moedaBR.format(total);
+
+      const lista = document.getElementById('lista');
+
+      if (!itens.length) {
+        lista.innerHTML = '<div class="sem-itens">Nenhum QR Code capturado ainda.</div>';
+        return;
+      }
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Dados</th>
+              <th>Valor</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      itens.forEach((item, index) => {
+        html += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>
+              <strong>${escaparHTML(item.beneficiario || 'Não identificado')}</strong>
+              <div class="pequeno">Leitura: ${escaparHTML(item.dataLeitura || '')}</div>
+              ${item.txid ? `<div class="pequeno">TXID: ${escaparHTML(item.txid)}</div>` : ''}
+              ${item.chavePix ? `<div class="pequeno">Chave: ${escaparHTML(item.chavePix)}</div>` : ''}
+            </td>
+            <td class="valor">${moedaBR.format(item.valor || 0)}</td>
+            <td><button class="remover" onclick="removerItem('${item.id}')">Remover</button></td>
+          </tr>
+        `;
+      });
+
+      html += '</tbody></table>';
+      lista.innerHTML = html;
+    }
+
+    function escaparHTML(texto) {
+      return String(texto || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function exportarCSV() {
+      if (!itens.length) {
+        alert('Não há itens para exportar.');
+        return;
+      }
+
+      const linhas = [];
+      linhas.push(['Item', 'Data leitura', 'Beneficiario', 'Cidade', 'Valor', 'TXID', 'Chave Pix'].join(';'));
+
+      itens.forEach((item, index) => {
+        linhas.push([
+          index + 1,
+          csv(item.dataLeitura),
+          csv(item.beneficiario),
+          csv(item.cidade),
+          String(Number(item.valor || 0).toFixed(2)).replace('.', ','),
+          csv(item.txid),
+          csv(item.chavePix)
+        ].join(';'));
+      });
+
+      const blob = new Blob(['\ufeff' + linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'qrcodes_pix_soma.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function csv(valor) {
+      const texto = String(valor || '');
+      return '"' + texto.replace(/"/g, '""') + '"';
+    }
+
+    carregarLocal();
+  </script>
+</body>
+</html>
